@@ -10,5 +10,5 @@ interface SetupRepository {
 
     suspend fun getRooms(searchQuery: String): Resource<List<Room>>
 
-    suspend fun joinRoomW(userName: String, roomName: String): Resource<Unit>
+    suspend fun joinRoom(userName: String, roomName: String): Resource<Unit>
 }
