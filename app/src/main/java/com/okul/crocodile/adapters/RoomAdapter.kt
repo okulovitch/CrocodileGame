@@ -2,14 +2,41 @@ package com.okul.crocodile.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.okul.crocodile.data.remote.ws.Room
 import com.okul.crocodile.databinding.ItemRoomBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class RoomAdapter @Inject constructor(): RecyclerView.Adapter<RoomAdapter.RoomViewHolder>() {
+class RoomAdapter @Inject constructor() : RecyclerView.Adapter<RoomAdapter.RoomViewHolder>() {
 
     class RoomViewHolder(val binding: ItemRoomBinding) : RecyclerView.ViewHolder(binding.root)
+
+    suspend fun updateDataset(newDataset: List<Room>) = withContext(Dispatchers.Default) {
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize(): Int {
+                return rooms.size
+            }
+
+            override fun getNewListSize(): Int {
+                return newDataset.size
+            }
+
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return rooms[oldItemPosition] == newDataset[newItemPosition]
+            }
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return rooms[oldItemPosition] == newDataset[newItemPosition]
+            }
+        })
+        withContext(Dispatchers.Main) {
+            rooms = newDataset
+            diff.dispatchUpdatesTo(this@RoomAdapter)
+        }
+    }
 
     var rooms = listOf<Room>()
         private set
@@ -46,6 +73,6 @@ class RoomAdapter @Inject constructor(): RecyclerView.Adapter<RoomAdapter.RoomVi
     }
 
     override fun getItemCount(): Int {
-       return rooms.size
+        return rooms.size
     }
 }
