@@ -3,6 +3,8 @@ package com.okul.crocodile.di
 import android.content.Context
 import com.google.gson.Gson
 import com.okul.crocodile.data.remote.api.SetupApi
+import com.okul.crocodile.repository.DefaultSetupRepository
+import com.okul.crocodile.repository.SetupRepository
 import com.okul.crocodile.util.Constants.HTTP_BASE_URL
 import com.okul.crocodile.util.Constants.HTTP_BASE_URL_LOCALHOST
 import com.okul.crocodile.util.Constants.USE_LOCALHOST
@@ -23,6 +25,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Singleton
+    @Provides
+    fun provideSetupRepository(
+        setupApi: SetupApi,
+        @ApplicationContext context: Context
+    ): SetupRepository = DefaultSetupRepository(setupApi, context)
 
     @Singleton
     @Provides

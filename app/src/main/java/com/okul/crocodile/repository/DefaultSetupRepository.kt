@@ -54,7 +54,7 @@ class DefaultSetupRepository @Inject constructor(
         }
     }
 
-    override suspend fun joinRoomW(userName: String, roomName: String): Resource<Unit> {
+    override suspend fun joinRoom(userName: String, roomName: String): Resource<Unit> {
         if (!context.checkForInternetConnection()) {
             return Resource.Error(context.getString(R.string.error_internet_turned_off))
         }

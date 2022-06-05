@@ -3,9 +3,10 @@ package com.okul.crocodile.ui.setup.fragments
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import com.okul.crocodile.R
 import com.okul.crocodile.databinding.FragmentSelectRoomBinding
 
-class SelectRoomFragment : Fragment() {
+class SelectRoomFragment : Fragment(R.layout.fragment_select_room) {
 
     private var _binding: FragmentSelectRoomBinding? = null
     private val binding: FragmentSelectRoomBinding
