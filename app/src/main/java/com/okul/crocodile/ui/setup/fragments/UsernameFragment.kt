@@ -51,7 +51,7 @@ class UsernameFragment : Fragment(R.layout.fragment_username) {
                     is SetupViewModel.SetupEvent.InputEmptyError -> {
                         snackbar(R.string.error_field_empty)
                     }
-                    is SetupViewModel.SetupEvent.InputShortError -> {
+                    is SetupViewModel.SetupEvent.InputTooShortError -> {
                         snackbar(getString(R.string.error_username_too_short, MIN_USERNAME_LENGTH))
                     }
                     is SetupViewModel.SetupEvent.InputTooLongError -> {

@@ -26,7 +26,7 @@ class SetupViewModel @Inject constructor(
 
     sealed class SetupEvent {
         object InputEmptyError : SetupEvent()
-        object InputShortError : SetupEvent()
+        object InputTooShortError : SetupEvent()
         object InputTooLongError : SetupEvent()
 
         data class CreateRoomEvent(val room: Room) : SetupEvent()
@@ -57,7 +57,7 @@ class SetupViewModel @Inject constructor(
                     _setupEvent.emit(SetupEvent.InputEmptyError)
                 }
                 trimmedUsername.length < MIN_USERNAME_LENGTH -> {
-                    _setupEvent.emit(SetupEvent.InputShortError)
+                    _setupEvent.emit(SetupEvent.InputTooShortError)
                 }
                 trimmedUsername.length > MAX_USERNAME_LENGTH -> {
                     _setupEvent.emit(SetupEvent.InputTooLongError)
@@ -75,7 +75,7 @@ class SetupViewModel @Inject constructor(
                     _setupEvent.emit(SetupEvent.InputEmptyError)
                 }
                 trimmedRoomName.length < MIN_ROOM_NAME_LENGTH -> {
-                    _setupEvent.emit(SetupEvent.InputShortError)
+                    _setupEvent.emit(SetupEvent.InputTooShortError)
                 }
                 trimmedRoomName.length > MAX_ROOM_NAME_LENGTH -> {
                     _setupEvent.emit(SetupEvent.InputTooLongError)
