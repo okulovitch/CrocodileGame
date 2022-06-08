@@ -2,7 +2,7 @@ package com.okul.crocodile.data.remote.ws
 
 data class Room(
     val name: String,
-    val maxPlayersCount: Int,
+    val maxPlayers: Int,
     val playerCount: Int = 1
 ) {
     enum class Phase {
