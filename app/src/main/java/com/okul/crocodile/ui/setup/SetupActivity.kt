@@ -1,7 +1,7 @@
 package com.okul.crocodile.ui.setup
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.okul.crocodile.databinding.ActivitySetupBinding
 import dagger.hilt.android.AndroidEntryPoint
