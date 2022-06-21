@@ -13,7 +13,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.net.Socket
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,36 +37,17 @@ class DrawingViewModel @Inject constructor(
     private val _selectedColorButtonId = MutableStateFlow(R.id.rbBlack)
     val selectedColorButtonId: StateFlow<Int> = _selectedColorButtonId
 
-    private val _connectionProgressBarVisible = MutableStateFlow(true)
-    val connectionProgressBarVisible: StateFlow<Boolean> = _connectionProgressBarVisible
-
-    private val _choseWordOverlayVisible = MutableStateFlow(false)
-    val chooseWordOverlayVisible: StateFlow<Boolean> = _choseWordOverlayVisible
-
     private val connectionEventChannel = Channel<WebSocket.Event>()
     val connectionEvent = connectionEventChannel.receiveAsFlow().flowOn(dispatchers.io)
 
     private val socketEventChannel = Channel<SocketEvent>()
     val socketEvent = socketEventChannel.receiveAsFlow().flowOn(dispatchers.io)
 
-    init {
-        observeBaseModels()
-        observeEvents()
-    }
-
-    fun setChooseWordOverlayVisibility(isVisible: Boolean) {
-        _choseWordOverlayVisible.value = isVisible
-    }
-
-    fun setConnectionProgressBarVisibility(isVisible: Boolean) {
-        _connectionProgressBarVisible.value = isVisible
-    }
-
     fun checkRadioButton(id: Int) {
         _selectedColorButtonId.value = id
     }
 
-    private fun observeEvents() {
+    fun observeEvents() {
         viewModelScope.launch(dispatchers.io) {
             drawingApi.observeEvents().collect { event ->
                 connectionEventChannel.send(event)
@@ -75,7 +55,7 @@ class DrawingViewModel @Inject constructor(
         }
     }
 
-    private fun observeBaseModels() {
+    fun observeBaseModels() {
         viewModelScope.launch(dispatchers.io) {
             drawingApi.observeBaseModels().collect { data ->
                 when (data) {
@@ -87,7 +67,6 @@ class DrawingViewModel @Inject constructor(
                             ACTION_UNDO -> socketEventChannel.send(SocketEvent.UndoEvent)
                         }
                     }
-                    is GameError -> socketEventChannel.send(SocketEvent.GameErrorEvent(data))
                     is Ping -> sendBaseModel(Ping())
                 }
             }
