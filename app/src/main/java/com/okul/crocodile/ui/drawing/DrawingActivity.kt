@@ -8,15 +8,23 @@ import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.navArgs
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.okul.crocodile.R
+import com.okul.crocodile.data.remote.ws.models.GameError
+import com.okul.crocodile.data.remote.ws.models.JoinRoomHandshake
 import com.okul.crocodile.databinding.ActivityDrawingBinding
 import com.okul.crocodile.util.Constants
+import com.tinder.scarlet.Event
+import com.tinder.scarlet.WebSocket
 
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class DrawingActivity : AppCompatActivity() {
@@ -28,11 +36,19 @@ class DrawingActivity : AppCompatActivity() {
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var rvPlayers: RecyclerView
 
+    private val args: DrawingActivityArgs by navArgs()
+
+    @Inject
+    lateinit var clientId: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDrawingBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         subscribeToUiStateUpdates()
+        listenToConnectionEvents()
+        listenToSocketEvents()
 
         toggle = ActionBarDrawerToggle(this, binding.root, R.string.open, R.string.close)
         toggle.syncState()
@@ -46,7 +62,7 @@ class DrawingActivity : AppCompatActivity() {
             binding.root.openDrawer(Gravity.START)
         }
 
-        binding.root.addDrawerListener(object: DrawerLayout.DrawerListener{
+        binding.root.addDrawerListener(object : DrawerLayout.DrawerListener {
             override fun onDrawerSlide(drawerView: View, slideOffset: Float) = Unit
 
             override fun onDrawerOpened(drawerView: View) = Unit
@@ -83,6 +99,64 @@ class DrawingActivity : AppCompatActivity() {
                         binding.drawingView.setThickness(60f)
                     }
                 }
+            }
+        }
+        lifecycleScope.launchWhenStarted {
+            viewModel.connectionProgressBarVisible.collect { isVisible ->
+                binding.connectionProgressBar.isVisible = isVisible
+            }
+        }
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.chooseWordOverlayVisible.collect { isVisible ->
+                binding.chooseWordOverlay.isVisible = isVisible
+            }
+        }
+    }
+
+    private fun listenToSocketEvents() = lifecycleScope.launchWhenStarted {
+        viewModel.socketEvent.collect { event ->
+            when (event) {
+                is DrawingViewModel.SocketEvent.GameErrorEvent -> {
+                    when (event.data.errorType) {
+                        GameError.ERROR_ROOM_NOT_FOUND -> finish()
+                    }
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun listenToConnectionEvents() = lifecycleScope.launchWhenStarted {
+        viewModel.connectionEvent.collect { event ->
+            when (event) {
+                is WebSocket.Event.OnConnectionOpened<*> -> {
+                    viewModel.sendBaseModel(
+                        JoinRoomHandshake(
+                            args.username, args.roomName, clientId
+                        )
+                    )
+                    viewModel.setConnectionProgressBarVisibility(false)
+                }
+                is WebSocket.Event.OnConnectionFailed -> {
+                    viewModel.setConnectionProgressBarVisibility(false)
+                    Snackbar.make(
+                        binding.root,
+                        R.string.error_connection_failed,
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                    event.throwable.printStackTrace()
+                }
+                is WebSocket.Event.OnConnectionClosed -> {
+                    viewModel.setConnectionProgressBarVisibility(false)
+                }
+                is WebSocket.Event.OnMessageReceived -> { //missed because have observeBaseModels fun in drawing viewModel
+
+                }
+                is WebSocket.Event.OnConnectionClosing -> {//todo
+
+                }
+                else -> Unit
             }
         }
     }
