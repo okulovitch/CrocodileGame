@@ -42,6 +42,7 @@ class DrawingView @JvmOverloads constructor(
     private var paths = Stack<PathData>()
     private var pathDataChangedListener: ((Stack<PathData>) -> Unit)? = null
 
+    private var startedTouch: Boolean = false
     var roomName: String? = null
     var isUserDrawing = false
         set(value) {
@@ -85,13 +86,29 @@ class DrawingView @JvmOverloads constructor(
         canvas?.drawPath(path, paint)
     }
 
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        path.reset()
+        invalidate()
+    }
+
+    fun undo() {
+        if (paths.isNotEmpty()) {
+            paths.pop()
+            pathDataChangedListener?.let { change ->
+                change(paths)
+            }
+            invalidate()
+        }
+    }
+
     private fun startedTouch(x: Float, y: Float) {
         path.reset()
         path.moveTo(x, y)
         curX = x
         curY = y
         onDrawListener?.let { draw ->
-            val drawData = createDrawData(x,y,x,y, ACTION_DOWN)
+            val drawData = createDrawData(x, y, x, y, ACTION_DOWN)
             draw(drawData)
         }
         invalidate()
@@ -144,6 +161,54 @@ class DrawingView @JvmOverloads constructor(
             ACTION_UP -> releasedTouch()
         }
         return true
+    }
+
+    fun startedTouchExternally(drawData: DrawData) {
+        parseDrawData(drawData).apply {
+            paint.color = color
+            paint.strokeWidth = thickness
+            path.reset()
+            path.moveTo(fromX, fromY)
+            invalidate()
+            startedTouch = true
+        }
+    }
+
+    fun movedTouchExternally(drawData: DrawData) {
+        parseDrawData(drawData).apply {
+            val dx = abs(toX - fromX)
+            val dy = abs(toY - fromY)
+            if (!startedTouch) {
+                startedTouchExternally(drawData)//prevent bug of gestures
+            }
+            if (dx >= smoothness || dy >= smoothness) {
+                path.quadTo(curX!!, curY!!, (curX!! + toX) / 2f, (curY!! + toY) / 2f)
+                invalidate()
+            }
+        }
+    }
+
+    fun releasedTouchExternally(drawData: DrawData) {
+        parseDrawData(drawData).apply {
+            path.lineTo(fromX, fromY)
+            canvas?.drawPath(path, paint)
+            paths.push(PathData(path, paint.color, paint.strokeWidth))
+            pathDataChangedListener?.let { change ->
+                change(paths)
+            }
+            path = Path()
+            invalidate()
+            startedTouch = false
+        }
+    }
+
+    private fun parseDrawData(drawData: DrawData): DrawData {
+        return drawData.copy(
+            fromX = drawData.fromX * viewWidth!!,
+            fromY = drawData.fromY * viewHeight!!,
+            toX = drawData.toX * viewHeight!!,
+            toY = drawData.toY * viewHeight!!
+        )
     }
 
     private fun createDrawData(
